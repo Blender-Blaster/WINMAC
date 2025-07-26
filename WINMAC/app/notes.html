@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Notepad</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: Consolas, monospace;
+      background: #fff;
+      color: #000;
+    }
+
+    .toolbar {
+      background: #f0f0f0;
+      border-bottom: 1px solid #ccc;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toolbar button {
+      background: #e0e0e0;
+      border: 1px solid #aaa;
+      padding: 6px 12px;
+      margin-left: 5px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      height: calc(100% - 42px);
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      outline: none;
+      resize: none;
+      line-height: 1.6;
+      background: #fff;
+      color: #000;
+    }
+
+    @media (max-width: 600px) {
+      textarea {
+        font-size: 14px;
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <span>📝 Notepad</span>
+    <div>
+      <button onclick="saveNote()">💾 Save</button>
+      <button onclick="clearNote()">🗑️ Clear</button>
+    </div>
+  </div>
+
+  <textarea id="notepad" spellcheck="false" placeholder="Start typing..."></textarea>
+
+  <script>
+    const notepad = document.getElementById("notepad");
+
+    // Load note on startup
+    window.onload = () => {
+      const saved = localStorage.getItem("notepad");
+      if (saved) notepad.value = saved;
+    };
+
+    // Auto-save every 3 seconds
+    setInterval(() => {
+      localStorage.setItem("notepad", notepad.value);
+    }, 3000);
+
+    function saveNote() {
+      localStorage.setItem("notepad", notepad.value);
+      alert("Note saved!");
+    }
+
+    function clearNote() {
+      if (confirm("Clear the note?")) {
+        notepad.value = "";
+        localStorage.removeItem("notepad");
+      }
+    }
+  </script>
+</body>
+</html>

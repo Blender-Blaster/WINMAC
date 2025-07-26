@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced HTML Word Processor</title>
+    <style>
+        :root {
+            --primary-color: #2b579a;
+            --hover-color: #e5f3ff;
+            --active-color: #cce4f7;
+        }
+        
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #ribbon {
+            background-color: #f3f3f3;
+            display: flex;
+            flex-direction: column;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        #tabs {
+            display: flex;
+            background-color: #f3f3f3;
+            padding-left: 10px;
+        }
+        
+        .tab {
+            padding: 8px 15px;
+            cursor: pointer;
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+            margin-right: 2px;
+            background-color: #e5e5e5;
+        }
+        
+        .tab.active {
+            background-color: white;
+            border-color: #ddd;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+            font-weight: bold;
+        }
+        
+        .tab:hover {
+            background-color: #eee;
+        }
+        
+        #toolbar {
+            padding: 8px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            background-color: white;
+        }
+        
+        .tool-group {
+            display: flex;
+            gap: 5px;
+            margin-right: 15px;
+            align-items: center;
+        }
+        
+        .tool-group:not(:last-child) {
+            border-right: 1px solid #eee;
+            padding-right: 15px;
+        }
+        
+        button, select {
+            padding: 5px 10px;
+            background: white;
+            border: 1px solid transparent;
+            border-radius: 3px;
+            cursor: pointer;
+            min-width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button:hover, select:hover {
+            background: var(--hover-color);
+            border-color: #c7e0f4;
+        }
+        
+        button.active {
+            background: var(--active-color);
+            border-color: #a7c8e4;
+        }
+        
+        #color-picker, #highlight-color {
+            width: 30px;
+            height: 30px;
+            padding: 0;
+            border: 1px solid #ddd;
+        }
+        
+        #editor-container {
+            flex: 1;
+            overflow: auto;
+            background: #e2e4e6;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        
+        #editor {
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            min-height: 11in;
+            width: 8.5in;
+            padding: 1in;
+            outline: none;
+            line-height: 1.5;
+        }
+        
+        #status-bar {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 5px 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        
+        .status-item {
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+        }
+        
+        #zoom-control {
+            display: flex;
+            align-items: center;
+        }
+        
+        #zoom-level {
+            width: 60px;
+            text-align: center;
+        }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: white;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+            padding: 5px 0;
+            top: 100%;
+            left: 0;
+        }
+        
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+        
+        .dropdown-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            display: block;
+            color: #333;
+            text-decoration: none;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--hover-color);
+        }
+        
+        .separator {
+            height: 1px;
+            background-color: #eee;
+            margin: 5px 0;
+        }
+        
+        #font-size {
+            width: 50px;
+        }
+        
+        #find-replace-dialog {
+            position: absolute;
+            right: 20px;
+            top: 60px;
+            background: white;
+            padding: 10px;
+            border: 1px solid #ddd;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            display: none;
+        }
+        
+        #find-replace-dialog input {
+            padding: 5px;
+            margin: 5px 0;
+            width: 200px;
+        }
+        
+        #find-replace-dialog button {
+            margin: 5px;
+        }
+        
+        .page-break {
+            page-break-after: always;
+            border-top: 1px dashed #ccc;
+            margin: 20px 0;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="ribbon">
+        <div id="tabs">
+            <div class="tab active">Home</div>
+            <div class="tab">Insert</div>
+            <div class="tab">Layout</div>
+            <div class="tab">Review</div>
+            <div class="tab">View</div>
+        </div>
+        
+        <div id="toolbar">
+            <div class="tool-group">
+                <div class="dropdown">
+                    <button id="font-family" title="Font">Calibri ▼</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" data-value="Arial">Arial</div>
+                        <div class="dropdown-item" data-value="Times New Roman">Times New Roman</div>
+                        <div class="dropdown-item" data-value="Courier New">Courier New</div>
+                        <div class="dropdown-item" data-value="Georgia">Georgia</div>
+                        <div class="dropdown-item" data-value="Verdana">Verdana</div>
+                        <div class="dropdown-item" data-value="Calibri">Calibri</div>
+                        <div class="dropdown-item" data-value="Cambria">Cambria</div>
+                    </div>
+                </div>
+                <div class="dropdown">
+                    <button id="font-size" title="Font Size">11 ▼</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" data-value="1">8</div>
+                        <div class="dropdown-item" data-value="2">9</div>
+                        <div class="dropdown-item" data-value="3">10</div>
+                        <div class="dropdown-item" data-value="4">11</div>
+                        <div class="dropdown-item" data-value="5">12</div>
+                        <div class="dropdown-item" data-value="6">14</div>
+                        <div class="dropdown-item" data-value="7">16</div>
+                        <div class="dropdown-item" data-value="8">18</div>
+                        <div class="dropdown-item" data-value="9">20</div>
+                        <div class="dropdown-item" data-value="10">22</div>
+                    </div>
+                </div>
+                <button id="increase-font" title="Increase Font Size">A+</button>
+                <button id="decrease-font" title="Decrease Font Size">A-</button>
+            </div>
+            
+            <div class="tool-group">
+                <button id="bold" title="Bold"><b>B</b></button>
+                <button id="italic" title="Italic"><i>I</i></button>
+                <button id="underline" title="Underline"><u>U</u></button>
+                <button id="strikethrough" title="Strikethrough"><s>S</s></button>
+                <button id="superscript" title="Superscript">X<sup>2</sup></button>
+                <button id="subscript" title="Subscript">X<sub>2</sub></button>
+                <div class="dropdown">
+                    <button id="text-effects" title="Text Effects and Typography">A</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" id="clear-formatting">Clear Formatting</div>
+                        <div class="separator"></div>
+                        <div class="dropdown-item">Outline</div>
+                        <div class="dropdown-item">Shadow</div>
+                        <div class="dropdown-item">Reflection</div>
+                        <div class="dropdown-item">Glow</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <input type="color" id="color-picker" title="Text Color" value="#000000">
+                <div class="dropdown">
+                    <button id="highlight" title="Text Highlight Color">🖍️</button>
+                    <div class="dropdown-content" style="display: flex; flex-wrap: wrap; width: 140px;">
+                        <div style="width: 20px; height: 20px; background: #FFFF00; margin: 2px; cursor: pointer;" data-value="#FFFF00"></div>
+                        <div style="width: 20px; height: 20px; background: #FF0000; margin: 2px; cursor: pointer;" data-value="#FF0000"></div>
+                        <div style="width: 20px; height: 20px; background: #00FF00; margin: 2px; cursor: pointer;" data-value="#00FF00"></div>
+                        <div style="width: 20px; height: 20px; background: #00FFFF; margin: 2px; cursor: pointer;" data-value="#00FFFF"></div>
+                        <div style="width: 20px; height: 20px; background: #FF00FF; margin: 2px; cursor: pointer;" data-value="#FF00FF"></div>
+                        <div style="width: 20px; height: 20px; background: #0000FF; margin: 2px; cursor: pointer;" data-value="#0000FF"></div>
+                        <div style="width: 20px; height: 20px; background: #FFFFFF; margin: 2px; cursor: pointer;" data-value="#FFFFFF"></div>
+                        <div style="width: 20px; height: 20px; background: #000000; margin: 2px; cursor: pointer;" data-value="#000000"></div>
+                        <div style="width: 20px; height: 20px; background: #FFC000; margin: 2px; cursor: pointer;" data-value="#FFC000"></div>
+                        <div style="width: 20px; height: 20px; background: #00B050; margin: 2px; cursor: pointer;" data-value="#00B050"></div>
+                        <div style="width: 20px; height: 20px; background: #7030A0; margin: 2px; cursor: pointer;" data-value="#7030A0"></div>
+                        <div style="width: 20px; height: 20px; background: transparent; border: 1px solid #ddd; margin: 2px; cursor: pointer;" data-value="transparent">No Color</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <button id="align-left" title="Align Left">≡</button>
+                <button id="align-center" title="Align Center">≡</button>
+                <button id="align-right" title="Align Right">≡</button>
+                <button id="align-justify" title="Justify">≡</button>
+                <div class="dropdown">
+                    <button id="line-spacing" title="Line Spacing">↕</button>
+                    <div class="dropdown-content">
+                        <div class="dropdown-item" data-value="1">1.0</div>
+                        <div class="dropdown-item" data-value="1.15">1.15</div>
+                        <div class="dropdown-item" data-value="1.5">1.5</div>
+                        <div class="dropdown-item" data-value="2">2.0</div>
+                        <div class="dropdown-item" data-value="2.5">2.5</div>
+                        <div class="dropdown-item" data-value="3">3.0</div>
+                        <div class="separator"></div>
+                        <div class="dropdown-item" id="add-space-before">Add Space Before Paragraph</div>
+                        <div class="dropdown-item" id="add-space-after">Add Space After Paragraph</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <button id="list-ul" title="Bullet List">•</button>
+                <button id="list-ol" title="Numbered List">1.</button>
+                <button id="indent" title="Increase Indent">→</button>
+                <button id="outdent" title="Decrease Indent">←</button>
+                <div class="dropdown">
+                    <button id="multilevel-list" title="Multilevel List">≡•</button>
+                    <div class="dropdown-content" style="width: 250px;">
+                        <div style="display: flex; flex-wrap: wrap;">
+                            <div style="width: 120px; padding: 5px;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">Bulleted</div>
+                                <div class="dropdown-item">• List</div>
+                                <div class="dropdown-item">◦ List</div>
+                                <div class="dropdown-item">▪ List</div>
+                            </div>
+                            <div style="width: 120px; padding: 5px;">
+                                <div style="font-weight: bold; margin-bottom: 5px;">Numbered</div>
+                                <div class="dropdown-item">1. List</div>
+                                <div class="dropdown-item">1) List</div>
+                                <div class="dropdown-item">A. List</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <div class="dropdown">
+                    <button id="styles" title="Styles">Styles ▼</button>
+                    <div class="dropdown-content" style="width: 200px;">
+                        <div style="font-weight: bold; padding: 5px 10px;">Styles</div>
+                        <div class="dropdown-item" style="font-size: 16px; font-weight: bold;">Heading 1</div>
+                        <div class="dropdown-item" style="font-size: 14px; font-weight: bold;">Heading 2</div>
+                        <div class="dropdown-item" style="font-size: 13px; font-weight: bold;">Heading 3</div>
+                        <div class="dropdown-item">Normal</div>
+                        <div class="dropdown-item">No Spacing</div>
+                        <div class="separator"></div>
+                        <div class="dropdown-item">Apply Styles...</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tool-group">
+                <button id="find" title="Find">🔍</button>
+                <button id="replace" title="Replace">🔍🔄</button>
+            </div>
+            
+            <div class="tool-group">
+                <button id="undo" title="Undo">↩</button>
+                <button id="redo" title="Redo">↪</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="editor-container">
+        <div id="editor" contenteditable="true">
+            <h1 style="font-size: 24px; color: #2b579a;">Advanced HTML Word Processor</h1>
+            <p style="font-size: 11pt; font-family: 'Calibri', sans-serif;">This is a sophisticated word processor built with HTML, CSS, and JavaScript that mimics many of Microsoft Word's features.</p>
+            
+            <h2 style="font-size: 18px; color: #2b579a;">Features</h2>
+            <ul>
+                <li>Ribbon interface with multiple tabs</li>
+                <li>Advanced text formatting options</li>
+                <li>Styles and themes</li>
+                <li>Find and replace functionality</li>
+                <li>Multiple page support</li>
+            </ul>
+            
+            <div class="page-break"></div>
+            
+            <h2 style="font-size: 18px; color: #2b579a;">Page 2</h2>
+            <p>The editor supports page breaks and maintains a professional document layout.</p>
+        </div>
+    </div>
+    
+    <div id="find-replace-dialog">
+        <div style="display: flex; justify-content: space-between;">
+            <h3 style="margin: 0;">Find and Replace</h3>
+            <button id="close-find-replace" style="background: none; border: none; cursor: pointer;">✕</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <div>Find:</div>
+            <input type="text" id="find-text">
+            <button id="find-next">Find Next</button>
+        </div>
+        <div style="margin-top: 10px;">
+            <div>Replace with:</div>
+            <input type="text" id="replace-text">
+            <button id="replace-btn">Replace</button>
+            <button id="replace-all">Replace All</button>
+        </div>
+    </div>
+    
+    <div id="status-bar">
+        <div style="display: flex;">
+            <div class="status-item">Page: 1</div>
+            <div class="status-item">Words: 0</div>
+            <div class="status-item">Characters: 0</div>
+        </div>
+        <div id="zoom-control">
+            <button id="zoom-out" title="Zoom Out">-</button>
+            <input type="text" id="zoom-level" value="100%" readonly>
+            <button id="zoom-in" title="Zoom In">+</button>
+        </div>
+    </div>
+
+    <script>
+        // Initialize editor
+        const editor = document.getElementById('editor');
+        
+        // Tab functionality
+        const tabs = document.querySelectorAll('.tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                // Here you would show/hide different toolbars based on tab
+            });
+        });
+        
+        // Font family dropdown
+        const fontFamilyDropdownItems = document.querySelectorAll('[data-value]');
+        fontFamilyDropdownItems.forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.parentElement.classList.contains('dropdown-content')) {
+                    const value = item.getAttribute('data-value');
+                    if (item.closest('.dropdown').querySelector('button').id === 'font-family') {
+                        document.execCommand('fontName', false, value);
+                        document.getElementById('font-family').textContent = value + ' ▼';
+                    } else if (item.closest('.dropdown').querySelector('button').id === 'font-size') {
+                        document.execCommand('fontSize', false, value);
+                        document.getElementById('font-size').textContent = getFontSizeFromValue(value) + ' ▼';
+                    } else if (item.closest('.dropdown').querySelector('button').id === 'highlight') {
+                        document.execCommand('hiliteColor', false, value);
+                    }
+                }
+            });
+        });
+        
+        function getFontSizeFromValue(value) {
+            const sizes = {
+                '1': '8',
+                '2': '9',
+                '3': '10',
+                '4': '11',
+                '5': '12',
+                '6': '14',
+                '7': '16',
+                '8': '18',
+                '9': '20',
+                '10': '22'
+            };
+            return sizes[value] || '11';
+        }
+        
+        // Text formatting buttons
+        document.getElementById('bold').addEventListener('click', function() {
+            document.execCommand('bold', false, null);
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('italic').addEventListener('click', function() {
+            document.execCommand('italic', false, null);
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('underline').addEventListener('click', function() {
+            document.execCommand('underline', false, null);
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('strikethrough').addEventListener('click', function() {
+            document.execCommand('strikeThrough', false, null);
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('superscript').addEventListener('click', function() {
+            document.execCommand('superscript', false, null);
+            this.classList.toggle('active');
+        });
+        
+        document.getElementById('subscript').addEventListener('click', function() {
+            document.execCommand('subscript', false, null);
+            this.classList.toggle('active');
+        });
+        
+        // Paragraph alignment
+        document.getElementById('align-left').addEventListener('click', function() {
+            document.execCommand('justifyLeft', false, null);
+            resetAlignmentButtons();
+            this.classList.add('active');
+        });
+        
+        document.getElementById('align-center').addEventListener('click', function() {
+            document.execCommand('justifyCenter', false, null);
+            resetAlignmentButtons();
+            this.classList.add('active');
+        });
+        
+        document.getElementById('align-right').addEventListener('click', function() {
+            document.execCommand('justifyRight', false, null);
+            resetAlignmentButtons();
+            this.classList.add('active');
+        });
+        
+        document.getElementById('align-justify').addEventListener('click', function() {
+            document.execCommand('justifyFull', false, null);
+            resetAlignmentButtons();
+            this.classList.add('active');
+        });
+        
+        function resetAlignmentButtons() {
+            ['align-left', 'align-center', 'align-right', 'align-justify'].forEach(id => {
+                document.getElementById(id).classList.remove('active');
+            });
+        }
+        
+        // Lists and indentation
+        document.getElementById('list-ul').addEventListener('click', function() {
+            document.execCommand('insertUnorderedList', false, null);
+        });
+        
+        document.getElementById('list-ol').addEventListener('click', function() {
+            document.execCommand('insertOrderedList', false, null);
+        });
+        
+        document.getElementById('indent').addEventListener('click', function() {
+            document.execCommand('indent', false, null);
+        });
+        
+        document.getElementById('outdent').addEventListener('click', function() {
+            document.execCommand('outdent', false, null);
+        });
+        
+        // Color pickers
+        document.getElementById('color-picker').addEventListener('change', function() {
+            document.execCommand('foreColor', false, this.value);
+        });
+        
+        // Font size controls
+        document.getElementById('increase-font').addEventListener('click', function() {
+            const currentSize = parseInt(document.querySelector('#font-size').textContent);
+            if (currentSize < 72) {
+                const newSize = currentSize + 1;
+                document.execCommand('fontSize', false, getValueFromFontSize(newSize));
+                document.getElementById('font-size').textContent = newSize + ' ▼';
+            }
+        });
+        
+        document.getElementById('decrease-font').addEventListener('click', function() {
+            const currentSize = parseInt(document.querySelector('#font-size').textContent);
+            if (currentSize > 1) {
+                const newSize = currentSize - 1;
+                document.execCommand('fontSize', false, getValueFromFontSize(newSize));
+                document.getElementById('font-size').textContent = newSize + ' ▼';
+            }
+        });
+        
+        function getValueFromFontSize(size) {
+            const sizes = {
+                '8': '1',
+                '9': '2',
+                '10': '3',
+                '11': '4',
+                '12': '5',
+                '14': '6',
+                '16': '7',
+                '18': '8',
+                '20': '9',
+                '22': '10'
+            };
+            return sizes[size.toString()] || '4';
+        }
+        
+        // Clear formatting
+        document.getElementById('clear-formatting').addEventListener('click', function() {
+            document.execCommand('removeFormat', false, null);
+        });
+        
+        // Line spacing
+        document.querySelectorAll('#line-spacing + .dropdown-content .dropdown-item').forEach(item => {
+            if (item.hasAttribute('data-value')) {
+                item.addEventListener('click', function() {
+                    const spacing = this.getAttribute('data-value');
+                    editor.style.lineHeight = spacing;
+                });
+            }
+        });
+        
+        // Find and replace functionality
+        document.getElementById('find').addEventListener('click', function() {
+            document.getElementById('find-replace-dialog').style.display = 'block';
+            document.getElementById('find-text').focus();
+        });
+        
+        document.getElementById('replace').addEventListener('click', function() {
+            document.getElementById('find-replace-dialog').style.display = 'block';
+            document.getElementById('find-text').focus();
+        });
+        
+        document.getElementById('close-find-replace').addEventListener('click', function() {
+            document.getElementById('find-replace-dialog').style.display = 'none';
+        });
+        
+        document.getElementById('find-next').addEventListener('click', findText);
+        document.getElementById('replace-btn').addEventListener('click', replaceText);
+        document.getElementById('replace-all').addEventListener('click', replaceAllText);
+        
+        let lastFound = null;
+        
+        function findText() {
+            const text = document.getElementById('find-text').value;
+            if (!text) return;
+            
+            // Clear previous highlights
+            if (lastFound) {
+                lastFound.innerHTML = lastFound.textContent;
+            }
+            
+            const content = editor.innerHTML;
+            const regex = new RegExp(text, 'gi');
+            const newContent = content.replace(regex, match => `<span style="background-color: yellow;">${match}</span>`);
+            editor.innerHTML = newContent;
+            
+            // Find the first occurrence and scroll to it
+            const highlighted = editor.querySelector('span[style="background-color: yellow;"]');
+            if (highlighted) {
+                highlighted.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                lastFound = highlighted;
+            }
+        }
+        
+        function replaceText() {
+            const findText = document.getElementById('find-text').value;
+            const replaceText = document.getElementById('replace-text').value;
+            
+            if (lastFound) {
+                lastFound.outerHTML = replaceText;
+                findText(); // Find next occurrence
+            }
+        }
+        
+        function replaceAllText() {
+            const findText = document.getElementById('find-text').value;
+            const replaceText = document.getElementById('replace-text').value;
+            
+            if (!findText) return;
+            
+            const content = editor.innerHTML;
+            const regex = new RegExp(findText, 'gi');
+            const newContent = content.replace(regex, replaceText);
+            editor.innerHTML = newContent;
+        }
+        
+        // Undo/redo functionality
+        document.getElementById('undo').addEventListener('click', function() {
+            document.execCommand('undo', false, null);
+        });
+        
+        document.getElementById('redo').addEventListener('click', function() {
+            document.execCommand('redo', false, null);
+        });
+        
+        // Zoom controls
+        document.getElementById('zoom-in').addEventListener('click', function() {
+            const currentZoom = parseInt(document.getElementById('zoom-level').value);
+            if (currentZoom < 200) {
+                const newZoom = currentZoom + 10;
+                document.getElementById('zoom-level').value = newZoom + '%';
+                editor.style.transform = `scale(${newZoom / 100})`;
+                editor.style.transformOrigin = 'top center';
+            }
+        });
+        
+        document.getElementById('zoom-out').addEventListener('click', function() {
+            const currentZoom = parseInt(document.getElementById('zoom-level').value);
+            if (currentZoom > 10) {
+                const newZoom = currentZoom - 10;
+                document.getElementById('zoom-level').value = newZoom + '%';
+                editor.style.transform = `scale(${newZoom / 100})`;
+                editor.style.transformOrigin = 'top center';
+            }
+        });
+        
+        // Update word and character count
+        function updateCounts() {
+            const text = editor.innerText;
+            const wordCount = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            const charCount = text.length;
+            
+            document.querySelector('.status-item:nth-child(2)').textContent = `Words: ${wordCount}`;
+            document.querySelector('.status-item:nth-child(3)').textContent = `Characters: ${charCount}`;
+        }
+        
+        editor.addEventListener('input', updateCounts);
+        updateCounts();
+        
+        // Update active buttons based on current selection
+        editor.addEventListener('mouseup', updateActiveButtons);
+        editor.addEventListener('keyup', updateActiveButtons);
+        
+        function updateActiveButtons() {
+            const formatButtons = ['bold', 'italic', 'underline', 'strikethrough', 'superscript', 'subscript'];
+            formatButtons.forEach(id => {
+                const button = document.getElementById(id);
+                const command = id === 'strikethrough' ? 'strikeThrough' : 
+                              id === 'superscript' ? 'superscript' :
+                              id === 'subscript' ? 'subscript' : id;
+                button.classList.toggle('active', document.queryCommandState(command));
+            });
+            
+            // Update alignment buttons
+            if (document.queryCommandState('justifyLeft')) {
+                resetAlignmentButtons();
+                document.getElementById('align-left').classList.add('active');
+            } else if (document.queryCommandState('justifyCenter')) {
+                resetAlignmentButtons();
+                document.getElementById('align-center').classList.add('active');
+            } else if (document.queryCommandState('justifyRight')) {
+                resetAlignmentButtons();
+                document.getElementById('align-right').classList.add('active');
+            } else if (document.queryCommandState('justifyFull')) {
+                resetAlignmentButtons();
+                document.getElementById('align-justify').classList.add('active');
+            }
+            
+            // Update font family and size
+            const fontFamily = document.queryCommandValue('fontName');
+            if (fontFamily && fontFamily !== '') {
+                document.getElementById('font-family').textContent = fontFamily + ' ▼';
+            }
+        }
+        
+        // Apply heading styles
+        document.querySelectorAll('#styles + .dropdown-content .dropdown-item').forEach((item, index) => {
+            if (index < 5) { // Only for the style items, not the "Apply Styles..." button
+                item.addEventListener('click', function() {
+                    if (index === 0) {
+                        document.execCommand('formatBlock', false, '<h1>');
+                    } else if (index === 1) {
+                        document.execCommand('formatBlock', false, '<h2>');
+                    } else if (index === 2) {
+                        document.execCommand('formatBlock', false, '<h3>');
+                    } else if (index === 3) {
+                        document.execCommand('formatBlock', false, '<p>');
+                    } else if (index === 4) {
+                        document.execCommand('formatBlock', false, '<p>');
+                        document.execCommand('removeFormat', false, null);
+                    }
+                });
+            }
+        });
+        
+        // Initialize with default font
+        document.execCommand('fontName', false, 'Calibri');
+        document.execCommand('fontSize', false, '4');
+    </script>
+</body>
+</html>
